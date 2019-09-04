@@ -7,6 +7,7 @@ mkdir -p "$logs"
 
 device_prefix="$1"
 binary="$2"
+once="$3"
 
 flash-device() {
   device="$1"
@@ -27,12 +28,20 @@ prev="$logs/.prev.txt"
 next="$logs/.next.txt"
 
 echo > "$prev"
+
+pids=()
 while true; do
   list-serial-devices > "$next"
-  comm -23 <(sort -n "$next") <(sort -n "$prev") | while read device; do
+  for device in $(comm -23 <(sort -n "$next") <(sort -n "$prev")); do
     echo "connected: $device"
     flash-device "$device" "$binary" &
+    pids+=($!)
   done
+  if [ "$once" ]; then
+    break;
+  fi
   sleep 1
   mv "$next" "$prev"
 done
+
+wait ${pids[*]}

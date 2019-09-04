@@ -4,7 +4,10 @@ ARDUINO_DIR = /Applications/Arduino.app/Contents/Java
 ARDUINO_LIB = $(HOME)/Library/Arduino15
 ARDUINO_SKETCHBOOK = $(HOME)/Documents/Arduino
 
-all: build autoflash
+.PHONY: all build flash
+
+all: build flash
+	@echo > /dev/null
 
 build: PlayaWiFi.ino.bin
 
@@ -37,8 +40,15 @@ PlayaWiFi.ino.bin: PlayaWiFi.ino index.h
 index.h: index.html
 	./export-string-to-h.sh "responseHTML" < index.html > index.h
 
-autoflash:
-	./autoflash.sh "/dev/tty.usbserial-" "PlayaWiFi.ino.bin"
+flash: PlayaWiFi.ino.bin.flashed
+
+PlayaWiFi.ino.bin.flashed: PlayaWiFi.ino.bin
+	./autoflash.sh "/dev/tty.usbserial-" "PlayaWiFi.ino.bin" 1
+	cp PlayaWiFi.ino.bin PlayaWiFi.ino.bin.flashed
+
+auto:
+	@echo Waiting for changes...
+	@while true; do make; sleep 1; done
 
 clean:
-	rm -rf build cache logs
+	rm -rf build cache logs PlayaWiFi.ino.bin.flashed
